@@ -1,4 +1,6 @@
-﻿using Microsoft.WindowsAzure.Storage.Blob;
+﻿using Azure;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 
 namespace NETPhotoGallery.Services
 {
@@ -7,8 +9,8 @@ namespace NETPhotoGallery.Services
 		Task<IEnumerable<Uri>> ListAsync();
 		Task UploadAsync(IFormFileCollection files);
 		Task DeleteAsync(string fileUri);
-		Task DeleteAllAsync();
-	}
+        Task DeleteAllAsync();
+    }
 
 	public class AzureBlobService : IAzureBlobService
 	{
@@ -23,45 +25,34 @@ namespace NETPhotoGallery.Services
 		{
 			var blobContainer = await _azureBlobConnectionFactory.GetBlobContainer();
 
-			BlobContinuationToken blobContinuationToken = null;
-			do
+            await foreach (var blob in blobContainer.GetBlobsAsync(BlobTraits.None, BlobStates.None, string.Empty))
 			{
-				var response = await blobContainer.ListBlobsSegmentedAsync(blobContinuationToken);
-				foreach (IListBlobItem blob in response.Results)
-				{
-					if (blob.GetType() == typeof(CloudBlockBlob))
-						await((CloudBlockBlob)blob).DeleteIfExistsAsync();
-				}
-				blobContinuationToken = response.ContinuationToken;
-			} while (blobContinuationToken != null);
-		}
+				blobContainer.DeleteBlob(blob.Name);
+            }
+        }
 
 		public async Task DeleteAsync(string fileUri)
 		{
 			var blobContainer = await _azureBlobConnectionFactory.GetBlobContainer();
 
-			Uri uri = new Uri(fileUri);
+			var uri = new Uri(fileUri);
 			string filename = Path.GetFileName(uri.LocalPath);
 
-			var blob = blobContainer.GetBlockBlobReference(filename);
+			var blob = blobContainer.GetBlobClient(filename);
 			await blob.DeleteIfExistsAsync();
 		}
 
 		public async Task<IEnumerable<Uri>> ListAsync()
 		{
-			var blobContainer = await _azureBlobConnectionFactory.GetBlobContainer();
 			var allBlobs = new List<Uri>();
-			BlobContinuationToken blobContinuationToken = null;
-			do
-			{
-				var response = await blobContainer.ListBlobsSegmentedAsync(blobContinuationToken);
-				foreach (IListBlobItem blob in response.Results)
-				{
-					if (blob.GetType() == typeof(CloudBlockBlob))
-						allBlobs.Add(blob.Uri);
-				}
-				blobContinuationToken = response.ContinuationToken;
-			} while (blobContinuationToken != null);
+            var blobContainer = await _azureBlobConnectionFactory.GetBlobContainer();
+
+            await foreach (var blob in blobContainer.GetBlobsAsync())
+            {
+                var blobClient = blobContainer.GetBlobClient(blob.Name);
+                allBlobs.Add(blobClient.Uri);
+            }
+
 			return allBlobs;
 		}
 
@@ -71,10 +62,10 @@ namespace NETPhotoGallery.Services
 
 			for (int i = 0; i < files.Count; i++)
 			{
-				var blob = blobContainer.GetBlockBlobReference(GetRandomBlobName(files[i].FileName));
+				var blob = blobContainer.GetBlobClient(GetRandomBlobName(files[i].FileName));
 				using (var stream = files[i].OpenReadStream())
 				{
-					await blob.UploadFromStreamAsync(stream);
+					await blob.UploadAsync(stream);
 
 				}
 			}

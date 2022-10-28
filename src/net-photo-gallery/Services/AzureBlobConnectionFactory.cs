@@ -1,25 +1,28 @@
-﻿using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Blob;
+﻿using Azure;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using System.ComponentModel;
+using System.Xml.Linq;
 
 namespace NETPhotoGallery.Services
 {
 	public interface IAzureBlobConnectionFactory
 	{
-		Task<CloudBlobContainer> GetBlobContainer();
+		Task<BlobContainerClient> GetBlobContainer();
 	}
 
 	public class AzureBlobConnectionFactory : IAzureBlobConnectionFactory
 	{
 		private readonly IConfiguration _configuration;
-		private CloudBlobClient _blobClient;
-		private CloudBlobContainer _blobContainer;
+		private BlobServiceClient _blobClient;
+		private BlobContainerClient _blobContainer;
 
 		public AzureBlobConnectionFactory(IConfiguration configuration)
 		{
 			_configuration = configuration;
 		}
 
-		public async Task<CloudBlobContainer> GetBlobContainer()
+		public async Task<BlobContainerClient> GetBlobContainer()
 		{
 			if (_blobContainer != null)
 				return _blobContainer;
@@ -28,19 +31,18 @@ namespace NETPhotoGallery.Services
 			if (string.IsNullOrWhiteSpace(containerName))
 			{
 				throw new ArgumentException("Configuration must contain ContainerName");
-			}
+			}            
 
-			var blobClient = GetClient();
+            _blobContainer = GetClient().GetBlobContainerClient(containerName);
 
-			_blobContainer = blobClient.GetContainerReference(containerName);
-			if(await _blobContainer.CreateIfNotExistsAsync())
-			{
-				await _blobContainer.SetPermissionsAsync(new BlobContainerPermissions { PublicAccess = BlobContainerPublicAccessType.Blob });
-			}
-			return _blobContainer;
+            var blobContainerInfo = await _blobContainer.CreateIfNotExistsAsync();
+
+            await _blobContainer.SetAccessPolicyAsync(PublicAccessType.BlobContainer);
+
+            return _blobContainer;
 		}
 
-		private CloudBlobClient GetClient()
+		private BlobServiceClient GetClient()
 		{
 			if (_blobClient != null)
 				return _blobClient;
@@ -51,12 +53,8 @@ namespace NETPhotoGallery.Services
 				throw new ArgumentException("Configuration must contain StorageConnectionString");
 			}
 
-			if(!CloudStorageAccount.TryParse(storageConnectionString, out CloudStorageAccount storageAccount))
-			{
-				throw new Exception("Could not create storage account with StorageConnectionString configuration");
-			}
+			_blobClient = new BlobServiceClient(storageConnectionString); 
 
-			_blobClient = storageAccount.CreateCloudBlobClient();
 			return _blobClient;
 		}
 	}
