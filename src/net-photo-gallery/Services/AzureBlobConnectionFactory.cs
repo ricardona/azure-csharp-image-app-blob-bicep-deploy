@@ -35,7 +35,7 @@ namespace NETPhotoGallery.Services
 
             _blobContainer = GetClient().GetBlobContainerClient(containerName);
 
-            var blobContainerInfo = await _blobContainer.CreateIfNotExistsAsync();
+            await _blobContainer.CreateIfNotExistsAsync();
 
             await _blobContainer.SetAccessPolicyAsync(PublicAccessType.BlobContainer);
 
