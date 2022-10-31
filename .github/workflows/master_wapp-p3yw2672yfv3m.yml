@@ -24,11 +24,9 @@ jobs:
 
       - name: Build with dotnet
         run: dotnet build --configuration Release
-        working-directory: 'src/net-photo-gallery'
 
       - name: dotnet publish
         run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/myapp
-        working-directory: 'src/net-photo-gallery'
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v2
@@ -55,5 +53,5 @@ jobs:
         with:
           app-name: 'wapp-p3yw2672yfv3m'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_9F5DF5C1BF4241C8B23B28AB653A9299 }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_7AE62DB58AFF49198771C29EA7E80E23 }}
           package: .
