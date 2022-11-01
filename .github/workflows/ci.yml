@@ -39,6 +39,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v3
         with:
+          context: 'src/net-photo-gallery'
           push: true
-          tags: netcoreexamples/photogallery:latest
+          tags: netcoreexamples/photogallery:latest        
 
