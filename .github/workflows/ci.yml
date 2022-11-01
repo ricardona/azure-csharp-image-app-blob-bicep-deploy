@@ -24,7 +24,7 @@ jobs:
         working-directory: 'src/net-photo-gallery'
 
       - name: dotnet publish
-        run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/publish
+        run: dotnet publish -c Release -o publish
         working-directory: 'src/net-photo-gallery'
 
       - name: Set up Docker Buildx
