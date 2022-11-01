@@ -41,5 +41,5 @@ jobs:
         with:
           context: 'src/net-photo-gallery'
           push: true
-          tags: zimelemon/netcoreexamples/photogallery:latest        
+          tags: zimelemon/photogallery:latest        
 
