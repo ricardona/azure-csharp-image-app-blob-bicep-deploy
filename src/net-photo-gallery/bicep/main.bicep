@@ -4,7 +4,7 @@ param location string = resourceGroup().location
 var storageAccountName = '${uniqueString(resourceGroup().id)}aci'
 param storageAccountType string = 'Standard_LRS'
 
-resource photoGalleryAciStorageAccount 'Microsoft.Storage/storageAccounts@2021-08-01' = {
+resource photoGalleryAciStorageAccount 'Microsoft.Storage/storageAccounts@2022-05-01' = {
   name: storageAccountName
   location: location
   sku: {
