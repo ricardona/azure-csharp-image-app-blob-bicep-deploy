@@ -37,7 +37,7 @@ param memoryInGb int = 1
   'Never'
   'OnFailure'
 ])
-param restartPolicy string = 'Always'
+param restartPolicy string = 'OnFailure'
 
 var blobStorageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=${photoGalleryAciStorageAccount.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${photoGalleryAciStorageAccount.listKeys().keys[0].value}'
 
