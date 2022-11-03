@@ -41,7 +41,7 @@ param restartPolicy string = 'Always'
 
 var blobStorageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=${photoGalleryAciStorageAccount.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${photoGalleryAciStorageAccount.listKeys().keys[0].value}'
 
-resource photoGalleryAci 'Microsoft.ContainerInstance/containerGroups@2019-12-01' = {
+resource photoGalleryAci 'Microsoft.ContainerInstance/containerGroups@2021-10-01' = {
   name: name
   location: location
   properties: {
