@@ -5,7 +5,7 @@ on:
 
 name: Azure ARM
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     steps:
 
@@ -19,7 +19,7 @@ jobs:
 
       # Deploy Bicep file
     - name: deploy
-      uses: azure/arm-deploy@v3
+      uses: azure/arm-deploy@v1
       with:
         subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION }}
         resourceGroupName: ${{ secrets.AZURE_RG }}
