@@ -2,9 +2,8 @@ name: Build and deploy ASP.Net Core app to ACI
 
 on:
   push:
-    branches:
-      - master
-  workflow_dispatch:
+    paths:
+      - "src/net-photo-gallery/**"
 
 jobs:
   build:
