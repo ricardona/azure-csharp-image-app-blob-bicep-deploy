@@ -1,8 +1,9 @@
 # .NET Photo Gallery Web Application Sample with Azure Blob Storage
 
 This sample application creates a web photo gallery that allows you to host and view images through a .NET web frontend. The code sample also includes functionality for deleting images. At the end, you have the option of:
-- Create the infraestrure Azure Blob Storage and Azure Container Instances using Bicep with Github Actions.
 - Build the application and push the Docker image to Docker Hub with Github Actions.
+- Create the infraestrure Azure Blob Storage and Azure Container Instances using Bicep with Github Actions.
+
 
 ![Azure Blob Storage Photo Gallery Web Application Sample .NET](https://github.com/Azure-Samples/storage-blobs-dotnet-webapp/raw/master/images/photo-gallery.png)
 
