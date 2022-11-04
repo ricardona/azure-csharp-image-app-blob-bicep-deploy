@@ -1,6 +1,6 @@
 # .NET Photo Gallery Web Application Sample with Azure Blob Storage
 
-This sample application creates a web photo gallery that allows you to host and view images through a .NET web frontend. The code sample also includes functionality for deleting images. At the end, you have the option of deploying the infraestrure/application to Azure using Bicep with Github Actions.
+This sample application creates a web photo gallery that allows you to host and view images through a .NET web frontend. The code sample also includes functionality for deleting images. At the end, you have the option of deploying the infraestrure/application to Azure Container Instances using Bicep with Github Actions.
 
 ![Azure Blob Storage Photo Gallery Web Application Sample .NET](https://github.com/Azure-Samples/storage-blobs-dotnet-webapp/raw/master/images/photo-gallery.png)
 
@@ -11,6 +11,7 @@ This sample application creates a web photo gallery that allows you to host and 
 - Azure Container Instances
 - Azure Bicep
 - Github Actions
+- Docker Hub Registry
 
 Azure Blob Storage Photo Gallery Web Application using ASP.NET MVC The sample uses the asynchronous programming model to demonstrate how to call the Storage Service using the Storage .NET client library's asynchronous APIs.
 
@@ -35,12 +36,12 @@ Create a resource group. Later in this quickstart, you'll deploy your Bicep file
 
     az group create --name myResourceGroup --location "eastus"
 
-Deploy manually the template.
+### Deploy manually the template.
 
     az deployment group create --resource-group myResourceGroup --template-file <path-to-template>
 
 
-Deploy Bicep files by using GitHub Actions
+### Deploy Bicep files by using GitHub Actions
 
 Generate deployment credentials
 
@@ -56,7 +57,7 @@ The output is a JSON object with the role assignment credentials that provide ac
       (...)
     }
 ```
-### Configure the GitHub secrets
+#### Configure the GitHub secrets
 
 Create secrets for your Azure credentials, resource group, and subscriptions.
 
@@ -70,6 +71,32 @@ In GitHub, navigate to your repository.
 
 * Create another secret named `AZURE_SUBSCRIPTION`. Add your subscription ID to the secret's value field (example: 90fd3f9d-4c61-432d-99ba-1273f236afa2).
 
+### Configure Docker Hub Registry Token
+
+Docker Hub lets you create personal access tokens as alternatives to your password. We wikk use tokens to access Hub images from the Github Actions.
+
+To create your access token:
+
+- Log in to hub.docker.com.
+
+- Click on your username in the top right corner and select Account Settings.
+
+- Select Security > New Access Token.
+
+- Add a description for your token. Use something that indicates where the token will be used, or set a purpose for the token (e.g "Github Actions").
+
+- Copy the token that appears on the screen and save it. You will not be able to retrieve the token once you close this prompt.
+
+Configure the GitHub secrets: 
+
+* In GitHub, navigate to your repository.
+
+* Select Security > Secrets and variables > Actions > New repository secret.
+
+* Create a secret named `DOCKERHUB_TOKEN`. Add the value of the recently created Docker Hub token.
+
+* Create another secret named `DOCKERHUB_USERNAME`. Add your Docker Hub username.
+
 
 ## About the code
 The code included in this sample is meant to be a quick start sample for learning about Azure Web Apps and Azure Storage. It is not intended to be a set of best practices on how to build scalable enterprise grade web applications.
@@ -80,3 +107,7 @@ The code included in this sample is meant to be a quick start sample for learnin
 - [Blob Service Concepts](http://msdn.microsoft.com/en-us/library/dd179376.aspx)
 - [Blob Service REST API](http://msdn.microsoft.com/en-us/library/dd135733.aspx)
 - [Blob Service C# API](http://go.microsoft.com/fwlink/?LinkID=398944)
+- [Azure Container Instances](https://azure.microsoft.com/en-us/products/container-instances/)
+- [Azure Bicep](https://learn.microsoft.com/en-us/azure/azure-resource-manager/bicep/overview?tabs=bicep)
+- [Github Actions](https://github.com/features/actions)
+
