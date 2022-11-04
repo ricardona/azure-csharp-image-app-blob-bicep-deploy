@@ -1,12 +1,16 @@
 # .NET Photo Gallery Web Application Sample with Azure Blob Storage
 
-This sample application creates a web photo gallery that allows you to host and view images through a .NET web frontend. The code sample also includes functionality for deleting images. At the end, you have the option of deploying the application to Azure.
+This sample application creates a web photo gallery that allows you to host and view images through a .NET web frontend. The code sample also includes functionality for deleting images. At the end, you have the option of deploying the infraestrure/application to Azure using Bicep with Github Actions.
+
+![Azure Blob Storage Photo Gallery Web Application Sample .NET](https://github.com/Azure-Samples/storage-blobs-dotnet-webapp/raw/master/images/photo-gallery.png)
 
 ## Technologies used
 - NET Core 6.0
 - Azure Storage emulator
-- Azure Web Apps
 - Azure Storage
+- Azure Container Instances
+- Azure Bicep
+- Github Actions
 
 Azure Blob Storage Photo Gallery Web Application using ASP.NET MVC The sample uses the asynchronous programming model to demonstrate how to call the Storage Service using the Storage .NET client library's asynchronous APIs.
 
