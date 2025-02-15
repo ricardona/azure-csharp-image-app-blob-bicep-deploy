@@ -35,9 +35,10 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push
+        if: github.ref == 'refs/heads/master'
         uses: docker/build-push-action@v3
         with:
           context: 'src/net-photo-gallery'
           push: true
-          tags: zimelemon/photogallery:latest        
+          tags: zimelemon/photogallery:latest
 
