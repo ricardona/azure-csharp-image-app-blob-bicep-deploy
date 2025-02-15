@@ -10,7 +10,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/src/net-photo-gallery/bin/Debug/net6.0/net-photo-gallery.dll",
+            "program": "${workspaceFolder}/src/net-photo-gallery/bin/Debug/net8.0/net-photo-gallery.dll",
             "args": [],
             "cwd": "${workspaceFolder}/src/net-photo-gallery",
             "stopAtEntry": false,
