@@ -1,20 +1,11 @@
 @description('Location for all resources.')
 param location string = resourceGroup().location
 
-var storageAccountName = '${uniqueString(resourceGroup().id)}aci'
+
 param storageAccountType string = 'Standard_LRS'
 
-resource photoGalleryAciStorageAccount 'Microsoft.Storage/storageAccounts@2022-05-01' = {
-  name: storageAccountName
-  location: location
-  sku: {
-    name: storageAccountType
-  }
-  kind: 'Storage'
-}
-
 @description('Name for the container group')
-param name string = 'photo-gallery-aci'
+param name string = 'photogalleryaci'
 
 @description('Container image to deploy.')
 param image string = 'docker.io/zimelemon/photogallery'
@@ -38,6 +29,24 @@ param memoryInGb int = 1
   'OnFailure'
 ])
 param restartPolicy string = 'OnFailure'
+
+@description('Docker Hub username')
+@secure()
+param dockerUsername string
+
+@description('Docker Hub password')
+@secure()
+param dockerPassword string
+
+var storageAccountName = '${name}stoaci'
+resource photoGalleryAciStorageAccount 'Microsoft.Storage/storageAccounts@2022-05-01' = {
+  name: storageAccountName
+  location: location
+  sku: {
+    name: storageAccountType
+  }
+  kind: 'Storage'
+}
 
 var blobStorageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=${photoGalleryAciStorageAccount.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${photoGalleryAciStorageAccount.listKeys().keys[0].value}'
 
@@ -98,6 +107,13 @@ resource photoGalleryAci 'Microsoft.ContainerInstance/containerGroups@2021-10-01
       ]
       dnsNameLabel: dnsNameLabel
     }
+    imageRegistryCredentials: [
+      {
+        server: 'docker.io'
+        username: dockerUsername
+        password: dockerPassword
+      }
+    ]
     diagnostics: {
       logAnalytics: {
         workspaceId: logAnalyticsWorkspace.properties.customerId
