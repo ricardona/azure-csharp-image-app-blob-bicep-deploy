@@ -34,7 +34,16 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push
+      - name: Build only (non-master branches)
+        if: github.ref != 'refs/heads/master'
+        uses: docker/build-push-action@v3
+        with:
+          context: 'src/net-photo-gallery'
+          push: false
+          load: true
+          tags: zimelemon/photogallery:latest
+
+      - name: Build and push (master branch)
         if: github.ref == 'refs/heads/master'
         uses: docker/build-push-action@v3
         with:
