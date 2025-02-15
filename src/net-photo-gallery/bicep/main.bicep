@@ -41,6 +41,21 @@ param restartPolicy string = 'OnFailure'
 
 var blobStorageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=${photoGalleryAciStorageAccount.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${photoGalleryAciStorageAccount.listKeys().keys[0].value}'
 
+// Add Log Analytics Workspace
+resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
+  name: '${name}-workspace'
+  location: location
+  properties: {
+    sku: {
+      name: 'PerGB2018'
+    }
+    retentionInDays: 30
+    features: {
+      enableLogAccessUsingOnlyResourcePermissions: true
+    }
+  }
+}
+
 resource photoGalleryAci 'Microsoft.ContainerInstance/containerGroups@2021-10-01' = {
   name: name
   location: location
@@ -83,7 +98,15 @@ resource photoGalleryAci 'Microsoft.ContainerInstance/containerGroups@2021-10-01
       ]
       dnsNameLabel: dnsNameLabel
     }
+    diagnostics: {
+      logAnalytics: {
+        workspaceId: logAnalyticsWorkspace.properties.customerId
+        workspaceKey: logAnalyticsWorkspace.listKeys().primarySharedKey
+      }
+    }
   }
 }
 
+// Add Log Analytics outputs
+output logAnalyticsWorkspaceId string = logAnalyticsWorkspace.properties.customerId
 output containerIPv4Address string = photoGalleryAci.properties.ipAddress.ip
