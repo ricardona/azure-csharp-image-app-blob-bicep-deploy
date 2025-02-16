@@ -1,14 +1,13 @@
 @description('Location for all resources.')
 param location string = resourceGroup().location
 
-
 param storageAccountType string = 'Standard_LRS'
 
 @description('Name for the container group')
 param name string = 'photogalleryaci'
 
 @description('Container image to deploy.')
-param image string = 'docker.io/zimelemon/photogallery'
+param image string = 'ghcr.io/ricardona/photogallery:latest'
 
 @description('Port to open on the container and the public IP address.')
 param port int = 80
@@ -30,14 +29,6 @@ param memoryInGb int = 1
 ])
 param restartPolicy string = 'OnFailure'
 
-@description('Docker Hub username')
-@secure()
-param dockerUsername string
-
-@description('Docker Hub password')
-@secure()
-param dockerPassword string
-
 var storageAccountName = '${name}stoaci'
 resource photoGalleryAciStorageAccount 'Microsoft.Storage/storageAccounts@2022-05-01' = {
   name: storageAccountName
@@ -46,11 +37,25 @@ resource photoGalleryAciStorageAccount 'Microsoft.Storage/storageAccounts@2022-0
     name: storageAccountType
   }
   kind: 'Storage'
+  properties: {
+    allowBlobPublicAccess: true
+    publicNetworkAccess: 'Enabled'
+  }
 }
 
-var blobStorageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=${photoGalleryAciStorageAccount.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${photoGalleryAciStorageAccount.listKeys().keys[0].value}'
+resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2022-05-01' = {
+  parent: photoGalleryAciStorageAccount
+  name: 'default'
+}
 
-// Add Log Analytics Workspace
+resource blobContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2022-05-01' = {
+  parent: blobService
+  name: 'imagecontainer'
+  properties: {
+    publicAccess: 'Container'
+  }
+}
+
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   name: '${name}-workspace'
   location: location
@@ -65,7 +70,22 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10
   }
 }
 
-resource photoGalleryAci 'Microsoft.ContainerInstance/containerGroups@2021-10-01' = {
+resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
+  name: '${name}-appinsights'
+  location: location
+  kind: 'web'
+  properties: {
+    Application_Type: 'web'
+    WorkspaceResourceId: logAnalyticsWorkspace.id
+    IngestionMode: 'LogAnalytics'
+  }
+}
+
+@description('The storage account connection string')
+#disable-next-line use-resource-symbol-reference
+var blobStorageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=${photoGalleryAciStorageAccount.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${listKeys(photoGalleryAciStorageAccount.id, photoGalleryAciStorageAccount.apiVersion).keys[0].value}'
+
+resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2021-10-01' = {
   name: name
   location: location
   properties: {
@@ -86,10 +106,14 @@ resource photoGalleryAci 'Microsoft.ContainerInstance/containerGroups@2021-10-01
               memoryInGB: memoryInGb
             }
           }
-          environmentVariables:[
+          environmentVariables: [
             {
               name: 'StorageConnectionString'
               secureValue: blobStorageConnectionString
+            }
+            {
+              name: 'ApplicationInsights__ConnectionString'
+              secureValue: applicationInsights.properties.ConnectionString
             }
           ]
         }
@@ -107,22 +131,8 @@ resource photoGalleryAci 'Microsoft.ContainerInstance/containerGroups@2021-10-01
       ]
       dnsNameLabel: dnsNameLabel
     }
-    imageRegistryCredentials: [
-      {
-        server: 'docker.io'
-        username: dockerUsername
-        password: dockerPassword
-      }
-    ]
-    diagnostics: {
-      logAnalytics: {
-        workspaceId: logAnalyticsWorkspace.properties.customerId
-        workspaceKey: logAnalyticsWorkspace.listKeys().primarySharedKey
-      }
-    }
   }
 }
 
-// Add Log Analytics outputs
 output logAnalyticsWorkspaceId string = logAnalyticsWorkspace.properties.customerId
-output containerIPv4Address string = photoGalleryAci.properties.ipAddress.ip
+output containerIPv4Address string = containerGroup.properties.ipAddress.ip

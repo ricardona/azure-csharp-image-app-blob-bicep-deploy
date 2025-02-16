@@ -41,7 +41,7 @@ Create a resource group. Later in this quickstart, you'll deploy your Bicep file
 
 ### Deploy manually the template.
 
-    az deployment group create --resource-group myResourceGroup --template-file src/net-photo-gallery/bicep/main.bicep --parameters dockerUsername=YOUR_DOCKER_USERNAME dockerPassword=YOUR_DOCKER_PASSWORD
+    az deployment group create --resource-group myResourceGroup --template-file src/net-photo-gallery/bicep/main.bicep
 
 
 ### Deploy Bicep files by using GitHub Actions
