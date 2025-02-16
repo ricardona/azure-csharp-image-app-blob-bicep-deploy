@@ -1,7 +1,6 @@
 @description('Location for all resources.')
 param location string = resourceGroup().location
 
-
 param storageAccountType string = 'Standard_LRS'
 
 @description('Name for the container group')
@@ -57,9 +56,6 @@ resource blobContainer 'Microsoft.Storage/storageAccounts/blobServices/container
   }
 }
 
-var blobStorageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=${photoGalleryAciStorageAccount.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${photoGalleryAciStorageAccount.listKeys().keys[0].value}'
-
-// Add Log Analytics Workspace
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   name: '${name}-workspace'
   location: location
@@ -85,7 +81,11 @@ resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
   }
 }
 
-resource photoGalleryAci 'Microsoft.ContainerInstance/containerGroups@2021-10-01' = {
+@description('The storage account connection string')
+#disable-next-line use-resource-symbol-reference
+var blobStorageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=${photoGalleryAciStorageAccount.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${listKeys(photoGalleryAciStorageAccount.id, photoGalleryAciStorageAccount.apiVersion).keys[0].value}'
+
+resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2021-10-01' = {
   name: name
   location: location
   properties: {
@@ -106,7 +106,7 @@ resource photoGalleryAci 'Microsoft.ContainerInstance/containerGroups@2021-10-01
               memoryInGB: memoryInGb
             }
           }
-          environmentVariables:[
+          environmentVariables: [
             {
               name: 'StorageConnectionString'
               secureValue: blobStorageConnectionString
@@ -131,15 +131,8 @@ resource photoGalleryAci 'Microsoft.ContainerInstance/containerGroups@2021-10-01
       ]
       dnsNameLabel: dnsNameLabel
     }
-    diagnostics: {
-      logAnalytics: {
-        workspaceId: logAnalyticsWorkspace.properties.customerId
-        workspaceKey: logAnalyticsWorkspace.listKeys().primarySharedKey
-      }
-    }
   }
 }
 
-// Add Log Analytics outputs
 output logAnalyticsWorkspaceId string = logAnalyticsWorkspace.properties.customerId
-output containerIPv4Address string = photoGalleryAci.properties.ipAddress.ip
+output containerIPv4Address string = containerGroup.properties.ipAddress.ip
