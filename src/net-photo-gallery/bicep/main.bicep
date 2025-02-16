@@ -8,7 +8,7 @@ param storageAccountType string = 'Standard_LRS'
 param name string = 'photogalleryaci'
 
 @description('Container image to deploy.')
-param image string = 'docker.io/zimelemon/photogallery'
+param image string = 'ghcr.io/ricardona/photogallery:latest'
 
 @description('Port to open on the container and the public IP address.')
 param port int = 80
@@ -30,14 +30,6 @@ param memoryInGb int = 1
 ])
 param restartPolicy string = 'OnFailure'
 
-@description('Docker Hub username')
-@secure()
-param dockerUsername string
-
-@description('Docker Hub password')
-@secure()
-param dockerPassword string
-
 var storageAccountName = '${name}stoaci'
 resource photoGalleryAciStorageAccount 'Microsoft.Storage/storageAccounts@2022-05-01' = {
   name: storageAccountName
@@ -46,6 +38,23 @@ resource photoGalleryAciStorageAccount 'Microsoft.Storage/storageAccounts@2022-0
     name: storageAccountType
   }
   kind: 'Storage'
+  properties: {
+    allowBlobPublicAccess: true
+    publicNetworkAccess: 'Enabled'
+  }
+}
+
+resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2022-05-01' = {
+  parent: photoGalleryAciStorageAccount
+  name: 'default'
+}
+
+resource blobContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2022-05-01' = {
+  parent: blobService
+  name: 'imagecontainer'
+  properties: {
+    publicAccess: 'Container'
+  }
 }
 
 var blobStorageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=${photoGalleryAciStorageAccount.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${photoGalleryAciStorageAccount.listKeys().keys[0].value}'
@@ -62,6 +71,17 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10
     features: {
       enableLogAccessUsingOnlyResourcePermissions: true
     }
+  }
+}
+
+resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
+  name: '${name}-appinsights'
+  location: location
+  kind: 'web'
+  properties: {
+    Application_Type: 'web'
+    WorkspaceResourceId: logAnalyticsWorkspace.id
+    IngestionMode: 'LogAnalytics'
   }
 }
 
@@ -91,6 +111,10 @@ resource photoGalleryAci 'Microsoft.ContainerInstance/containerGroups@2021-10-01
               name: 'StorageConnectionString'
               secureValue: blobStorageConnectionString
             }
+            {
+              name: 'ApplicationInsights__ConnectionString'
+              secureValue: applicationInsights.properties.ConnectionString
+            }
           ]
         }
       }
@@ -107,13 +131,6 @@ resource photoGalleryAci 'Microsoft.ContainerInstance/containerGroups@2021-10-01
       ]
       dnsNameLabel: dnsNameLabel
     }
-    imageRegistryCredentials: [
-      {
-        server: 'docker.io'
-        username: dockerUsername
-        password: dockerPassword
-      }
-    ]
     diagnostics: {
       logAnalytics: {
         workspaceId: logAnalyticsWorkspace.properties.customerId
