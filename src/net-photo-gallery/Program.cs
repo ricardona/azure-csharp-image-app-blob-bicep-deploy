@@ -5,6 +5,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+// Add Application Insights telemetry services
+builder.Services.AddApplicationInsightsTelemetry();
+
 builder.Services.AddSingleton<IAzureBlobConnectionFactory, AzureBlobConnectionFactory>();
 builder.Services.AddSingleton<IAzureBlobService, AzureBlobService>();
 
