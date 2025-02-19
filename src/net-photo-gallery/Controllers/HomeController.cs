@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using NETPhotoGallery.Models;
 using NETPhotoGallery.Services;
 using System.Diagnostics;
@@ -8,10 +9,12 @@ namespace NETPhotoGallery.Controllers
     public class HomeController : Controller
     {
         private readonly IAzureBlobService _azureBlobService;
+        private readonly ILogger<HomeController> _logger;
 
-        public HomeController(IAzureBlobService azureBlobService)
+        public HomeController(IAzureBlobService azureBlobService, ILogger<HomeController> logger)
         {
             _azureBlobService = azureBlobService;
+            _logger = logger;
         }
 
         public async Task<ActionResult> Index()
@@ -23,6 +26,7 @@ namespace NETPhotoGallery.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error in Index method");
                 ViewData["message"] = ex.Message;
                 ViewData["trace"] = ex.StackTrace;
                 return View("Error");
@@ -30,7 +34,7 @@ namespace NETPhotoGallery.Controllers
         }
 
         [HttpPost]
-        [Route ("Home/UploadAsync")]
+        [Route("Home/UploadAsync")]
         public async Task<ActionResult> UploadAsync()
         {
             try
@@ -52,6 +56,7 @@ namespace NETPhotoGallery.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error in UploadAsync method");
                 ViewData["message"] = ex.Message;
                 ViewData["trace"] = ex.StackTrace;
                 return View("Error");
@@ -68,6 +73,7 @@ namespace NETPhotoGallery.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error in DeleteImage method");
                 ViewData["message"] = ex.Message;
                 ViewData["trace"] = ex.StackTrace;
                 return View("Error");
@@ -84,12 +90,12 @@ namespace NETPhotoGallery.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error in DeleteAll method");
                 ViewData["message"] = ex.Message;
                 ViewData["trace"] = ex.StackTrace;
                 return View("Error");
             }
         }
-
 
         public IActionResult Privacy()
         {
