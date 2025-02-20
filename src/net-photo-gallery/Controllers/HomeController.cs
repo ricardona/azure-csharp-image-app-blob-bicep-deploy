@@ -29,6 +29,7 @@ namespace NETPhotoGallery.Controllers
                 _logger.LogError(ex, "Error in Index method");
                 ViewData["message"] = ex.Message;
                 ViewData["trace"] = ex.StackTrace;
+                Response.StatusCode = 500;
                 return View("Error");
             }
         }
@@ -59,6 +60,7 @@ namespace NETPhotoGallery.Controllers
                 _logger.LogError(ex, "Error in UploadAsync method");
                 ViewData["message"] = ex.Message;
                 ViewData["trace"] = ex.StackTrace;
+                Response.StatusCode = 500; // set status code to 500
                 return View("Error");
             }
         }
@@ -76,6 +78,7 @@ namespace NETPhotoGallery.Controllers
                 _logger.LogError(ex, "Error in DeleteImage method");
                 ViewData["message"] = ex.Message;
                 ViewData["trace"] = ex.StackTrace;
+                Response.StatusCode = 500; // set status code to 500
                 return View("Error");
             }
         }
@@ -93,6 +96,7 @@ namespace NETPhotoGallery.Controllers
                 _logger.LogError(ex, "Error in DeleteAll method");
                 ViewData["message"] = ex.Message;
                 ViewData["trace"] = ex.StackTrace;
+                Response.StatusCode = 500; // set status code to 500
                 return View("Error");
             }
         }
