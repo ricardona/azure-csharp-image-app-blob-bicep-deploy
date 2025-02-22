@@ -58,3 +58,14 @@ jobs:
           context: 'src/net-photo-gallery'
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/photogallery:latest
+
+      - name: Azure Login
+        if: github.ref == 'refs/heads/master'
+        uses: azure/login@v1
+        with:
+          creds: "${{ secrets.AZURE_CREDENTIALS }}"
+
+      - name: Restart ACI
+        if: github.ref == 'refs/heads/master'
+        run: |
+          az container restart --name ${{ secrets.AZURE_ACI_NAME }} --resource-group ${{ secrets.AZURE_RG }}
