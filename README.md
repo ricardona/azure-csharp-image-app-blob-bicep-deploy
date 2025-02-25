@@ -8,7 +8,7 @@ This sample application creates a web photo gallery that allows you to host and 
 ![Azure Blob Storage Photo Gallery Web Application Sample .NET](https://github.com/Azure-Samples/storage-blobs-dotnet-webapp/raw/master/images/photo-gallery.png)
 
 ## Technologies used
-- NET Core 6.0
+- NET Core 8.0
 - Azure Storage emulator
 - Azure Storage
 - Azure Container Instances
@@ -41,7 +41,7 @@ Create a resource group. Later in this quickstart, you'll deploy your Bicep file
 
 ### Deploy manually the template.
 
-    az deployment group create --resource-group myResourceGroup --template-file <path-to-template>
+    az deployment group create --resource-group myResourceGroup --template-file src/net-photo-gallery/bicep/main.bicep
 
 
 ### Deploy Bicep files by using GitHub Actions
