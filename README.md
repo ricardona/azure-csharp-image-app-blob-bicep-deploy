@@ -114,4 +114,3 @@ The code included in this sample is meant to be a quick start sample for learnin
 - [Azure Bicep](https://learn.microsoft.com/en-us/azure/azure-resource-manager/bicep/overview?tabs=bicep)
 - [Github Actions](https://github.com/features/actions)
 - [Base on this sample application from Microsoft](https://github.com/azure-samples/storage-blobs-dotnet-webapp/tree/master/)
-
