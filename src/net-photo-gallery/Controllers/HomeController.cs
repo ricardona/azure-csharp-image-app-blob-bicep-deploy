@@ -9,11 +9,13 @@ namespace NETPhotoGallery.Controllers
     public class HomeController : Controller
     {
         private readonly IAzureBlobService _azureBlobService;
+        private readonly IImageLikeService _imageLikeService;
         private readonly ILogger<HomeController> _logger;
 
-        public HomeController(IAzureBlobService azureBlobService, ILogger<HomeController> logger)
+        public HomeController(IAzureBlobService azureBlobService, IImageLikeService imageLikeService, ILogger<HomeController> logger)
         {
             _azureBlobService = azureBlobService;
+            _imageLikeService = imageLikeService;
             _logger = logger;
         }
 
@@ -22,7 +24,16 @@ namespace NETPhotoGallery.Controllers
             try
             {
                 var allBlobs = await _azureBlobService.ListAsync();
-                return View(allBlobs);
+                var blobsWithLikes = new List<BlobViewModel>();
+                
+                foreach (var blob in allBlobs)
+                {
+                    var imageId = blob.Segments.Last();
+                    var likes = await _imageLikeService.GetLikesAsync(imageId);
+                    blobsWithLikes.Add(new BlobViewModel { Uri = blob, Likes = likes });
+                }
+                
+                return View(blobsWithLikes);
             }
             catch (Exception ex)
             {
@@ -98,6 +109,22 @@ namespace NETPhotoGallery.Controllers
                 ViewData["trace"] = ex.StackTrace;
                 Response.StatusCode = 500; // set status code to 500
                 return View("Error");
+            }
+        }        
+
+        [HttpPost]
+        public async Task<ActionResult> LikeImage(string imageId)
+        {
+            try
+            {
+                await _imageLikeService.AddLikeAsync(imageId);
+                var likes = await _imageLikeService.GetLikesAsync(imageId);
+                return Json(new { success = true, likes = likes });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in LikeImage method");
+                return Json(new { success = false, message = ex.Message });
             }
         }
 

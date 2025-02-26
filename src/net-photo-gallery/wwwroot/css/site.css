@@ -95,3 +95,27 @@ body {
 	width: 30px;
 	height: 30px;
 }
+
+.imageActions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 5px;
+}
+
+.like-button {
+    padding: 5px 10px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 1.1em;
+}
+
+.like-button:hover {
+    transform: scale(1.1);
+}
+
+.like-count {
+    font-weight: bold;
+    margin-left: 3px;
+}

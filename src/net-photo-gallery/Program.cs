@@ -10,6 +10,7 @@ builder.Services.AddApplicationInsightsTelemetry();
 
 builder.Services.AddSingleton<IAzureBlobConnectionFactory, AzureBlobConnectionFactory>();
 builder.Services.AddSingleton<IAzureBlobService, AzureBlobService>();
+builder.Services.AddSingleton<IImageLikeService, ImageLikeService>();
 
 var app = builder.Build();
 
