@@ -23,17 +23,25 @@ namespace NETPhotoGallery.Controllers
         {
             try
             {
-                var allBlobs = await _azureBlobService.ListAsync();
-                var blobsWithLikes = new List<BlobViewModel>();
+                var allBlobsTask = _azureBlobService.ListAsync();
+                var allLikesTask = _imageLikeService.GetAllLikesAsync();
                 
-                foreach (var blob in allBlobs)
+                await Task.WhenAll(allBlobsTask, allLikesTask);
+                
+                var allBlobs = await allBlobsTask;
+                var likesMap = await allLikesTask;
+                
+                var blobViewModels = allBlobs.Select(blob =>
                 {
                     var imageId = blob.Segments.Last();
-                    var likes = await _imageLikeService.GetLikesAsync(imageId);
-                    blobsWithLikes.Add(new BlobViewModel { Uri = blob, Likes = likes });
-                }
+                    return new BlobViewModel 
+                    { 
+                        Uri = blob, 
+                        Likes = likesMap.GetValueOrDefault(imageId, 0) 
+                    };
+                }).ToList();
                 
-                return View(blobsWithLikes);
+                return View(blobViewModels);
             }
             catch (Exception ex)
             {

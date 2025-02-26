@@ -6,6 +6,7 @@ namespace NETPhotoGallery.Services
     public interface IImageLikeService
     {
         Task<int> GetLikesAsync(string imageId);
+        Task<Dictionary<string, int>> GetAllLikesAsync();
         Task AddLikeAsync(string imageId);
     }
 
@@ -33,6 +34,19 @@ namespace NETPhotoGallery.Services
             {
                 return 0;
             }
+        }
+
+        public async Task<Dictionary<string, int>> GetAllLikesAsync()
+        {
+            var results = new Dictionary<string, int>();
+            var queryResults = _tableClient.QueryAsync<ImageLike>(filter: $"PartitionKey eq 'images'");
+            
+            await foreach (var like in queryResults)
+            {
+                results[like.RowKey] = like.LikeCount;
+            }
+            
+            return results;
         }
 
         public async Task AddLikeAsync(string imageId)
