@@ -1,4 +1,7 @@
-﻿@*
+﻿@using System.IO
+@using System.Linq
+@model IEnumerable<NETPhotoGallery.Models.BlobViewModel>
+@*
 	//----------------------------------------------------------------------------------
 	// Copyright (c) Microsoft Corporation. All rights reserved.
 	//
@@ -17,6 +20,7 @@
 	ViewBag.Title = "Index";
 }
 @*Header Section*@
+
 <div class="jumbotron">
 	<h1>🪺 ImageNest</h1>
 	<h5>The best place for your images</h5>
@@ -38,13 +42,21 @@
 	- The Image (159x159) - [Set in .thumb css class]
 	- A delete icon (30X30) - [Set in .deleteDiv css class] (~/Images/deleteImage.png) that calls deleteImage JS function
 	- A DeleteAll button if there are any items that calls the DeleteAll controller Action*@
-@if (Model != null && Model.Count > 0)
+@if (Model != null && Model.Any())
 {
 	foreach (var item in Model)
 	{
+		var imageId = Uri.UnescapeDataString(item.Uri.Segments.Last());
 		<div class="imageBlock">
-			<a href="@item" target="_blank"><img class="thumb" src="@item" alt="images" /></a><br />
-			<div class="deleteDiv"><img class="deleteIcon" src="~/Images/deleteImage.png" title="Delete Image" onclick="deleteImage('@item');" /></div>
+			<a href="@item.Uri" target="_blank"><img class="thumb" src="@item.Uri" alt="images" /></a><br />
+			<div class="imageActions">
+				<button class="btn btn-link like-button" onclick="likeImage('@imageId', this)">
+					👍 <span class="like-count">@item.Likes</span>
+				</button>
+				<div class="deleteDiv">
+					<img class="deleteIcon" src="~/Images/deleteImage.png" title="Delete Image" onclick="deleteImage('@item.Uri');" />
+				</div>
+			</div>
 		</div>
 	}
 
@@ -54,7 +66,6 @@
 	}
 }
 <script>
-    //Calls async Task<ActionResult> DeleteImage(string name) in the HomeController and Refreshes the page
     function deleteImage(item) {
         var url = "/Home/DeleteImage";
         $.post(url, { FileUri: item }, function (data) {
@@ -62,7 +73,6 @@
         });
     }
 
-    //Lists the file name and size for all files to be uploaded by updating the <p id="FilesToUpload"></p> control
     function DisplayFilesToUpload() {
         var element = document.getElementById("file");
         var html = "";
@@ -79,4 +89,11 @@
         document.getElementById("FilesToUpload").innerHTML = html;
     }
 
+    function likeImage(imageId, button) {
+        $.post("/Home/LikeImage", { imageId: imageId }, function (data) {
+            if (data.success) {
+                $(button).find('.like-count').text(data.likes);
+            }
+        });
+    }
 </script>
