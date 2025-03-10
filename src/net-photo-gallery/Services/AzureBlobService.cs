@@ -34,6 +34,11 @@ namespace NETPhotoGallery.Services
 		public async Task DeleteAsync(string fileUri)
 		{
 			var blobContainer = await _azureBlobConnectionFactory.GetBlobContainer();
+			// Unable to delete:
+			// ----------------
+            // var uri = new Uri(fileUri+ "ca");
+            // ----------------
+			// No exception :(
 
 			var uri = new Uri(fileUri);
 			string filename = Path.GetFileName(uri.LocalPath);
@@ -49,10 +54,15 @@ namespace NETPhotoGallery.Services
 
             await foreach (var blob in blobContainer.GetBlobsAsync())
             {
+			// Unable to list:
+			// ----------------
+            // var blobClient = blobContainer.GetBlobClient(blob.Name +"CA");
+            // ----------------
+			// No exception :(
+
                 var blobClient = blobContainer.GetBlobClient(blob.Name);
                 allBlobs.Add(blobClient.Uri);
             }
-
 			return allBlobs;
 		}
 
@@ -62,6 +72,15 @@ namespace NETPhotoGallery.Services
 
 			for (int i = 0; i < files.Count; i++)
 			{
+				// Unable to list:
+				// ----------------
+				// using (var stream = files[i-2].OpenReadStream())
+				// ----------------
+				// An error occurred while processing your request: Index was out of range. Must be non-negative and less than the size of the collection. (Parameter 'index')
+				// Stack Trace
+				// at System.Collections.Generic.List`1.get_Item(Int32 index) 
+				// at NETPhotoGallery.Services.AzureBlobService.UploadAsync(IFormFileCollection files) in c:\02_Repos\azure-csharp-image-app-blob-bicep-deploy\src\net-photo-gallery\Services\AzureBlobService.cs:line 81 
+				// at NETPhotoGallery.Controllers.HomeController.UploadAsync() in c:\02_Repos\azure-csharp-image-app-blob-bicep-deploy\src\net-photo-gallery\Controllers\HomeController.cs:line 74
 				var blob = blobContainer.GetBlobClient(GetRandomBlobName(files[i].FileName));
 				using (var stream = files[i].OpenReadStream())
 				{
