@@ -1,0 +1,121 @@
+@model NETPhotoGallery.Models.ImageDetailsViewModel
+@{
+    ViewData["Title"] = "Image Details: " + Model.ImageFileName;
+}
+
+<div class="container mt-4">
+    <h1>@ViewData["Title"]</h1>
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-action="Index">Gallery Root</a></li>
+            @if (!string.IsNullOrEmpty(Model.FolderName))
+            {
+                <li class="breadcrumb-item"><a asp-action="Index" asp-route-currentFolderName="@Model.FolderName">@Model.FolderName</a></li>
+            }
+            <li class="breadcrumb-item active" aria-current="page">@Model.ImageFileName</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-8 text-center">
+            <img src="@Model.ImageUri" class="img-fluid" alt="@Model.ImageFileName" style="max-height: 70vh; object-fit: contain; border: 1px solid #ddd; padding: 5px;" />
+        </div>
+        <div class="col-md-4">
+            <h3>Details</h3>
+            <p><strong>File Name:</strong> @Model.ImageFileName</p>
+            @if (!string.IsNullOrEmpty(Model.FolderName))
+            {
+                <p><strong>Folder:</strong> @Model.FolderName</p>
+            }
+
+            <h4>Likes</h4>
+            <p>
+                <button class="btn btn-primary like-button" onclick="likeImage('@Model.ServiceImageId', this)">
+                    👍 <span class="like-count">@Model.Likes</span>
+                </button>
+            </p>
+
+            <h4>Tags</h4>
+            <div class="imageTags mb-2" id="tags-@Model.ServiceImageId">
+                @foreach (var tag in Model.Tags)
+                {
+                    <span class="badge bg-secondary me-1 tag-span-@Model.ServiceImageId-@tag.RowKey">
+                        @tag.Name
+                        <button type="button" class="btn-close btn-sm" aria-label="Remove" onclick="removeTag('@Model.ServiceImageId', '@tag.Name', '@tag.RowKey')"></button>
+                    </span>
+                }
+            </div>
+            <div class="input-group input-group-sm mb-3">
+                <input type="text" class="form-control" id="newTag-@Model.ServiceImageId" placeholder="Add tag">
+                <button class="btn btn-outline-primary" type="button" onclick="addTag('@Model.ServiceImageId', document.getElementById('newTag-@Model.ServiceImageId').value)">Add Tag</button>
+            </div>
+
+            <a asp-action="Index" asp-route-currentFolderName="@Model.FolderName" class="btn btn-secondary mt-3">Back to Folder</a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Ensure jQuery is loaded. These functions are duplicated from Index.cshtml for now.
+        // Consider moving to a shared JS file if _Layout.cshtml doesn't already include them.
+        function likeImage(imageId, button) {
+            $.post("/Home/LikeImage", { imageId: imageId }, function (data) {
+                if (data.success) {
+                    $(button).find('.like-count').text(data.likes);
+                } else {
+                    alert("Error liking image: " + (data.message || "Unknown error"));
+                }
+            }).fail(function() {
+                alert("Failed to send like request.");
+            });
+        }
+
+        function addTag(imageId, tagName) {
+            if (!tagName.trim()) { alert('Tag name cannot be empty.'); return; }
+            $.post("/Home/AddTagToImage", { imageId: imageId, tagName: tagName })
+                .done(function(data) {
+                    if (data.success && data.tag) {
+                        var newTagName = escapeHtml(data.tag.name); // Use the name from response
+                        var newTagRowKey = data.tag.rowKey;
+                        var tagHtml = "<span class='badge bg-secondary me-1 tag-span-" + imageId + "-" + newTagRowKey + "'>" +
+                                      newTagName +
+                                      " <button type='button' class='btn-close btn-sm' aria-label='Remove' onclick='removeTag(\"" + imageId + "\", \"" + newTagName + "\", \"" + newTagRowKey + "\")'></button>" +
+                                      "</span>";
+                        $('#tags-' + imageId).append(tagHtml);
+                        $('#newTag-' + imageId).val('');
+                    } else {
+                        alert("Error adding tag: " + (data.message || "Unknown error"));
+                    }
+                })
+                .fail(function() { alert("Failed to send add tag request."); });
+        }
+
+        function removeTag(imageId, tagName, tagRowKey) {
+            $.post("/Home/RemoveTagFromImage", { imageId: imageId, tagName: tagName }) // tagName is used by service for removal
+                .done(function(data) {
+                    if (data.success) {
+                        // Use tagRowKey for unique DOM element selection
+                        $('.tag-span-' + imageId + '-' + tagRowKey).remove();
+                    } else {
+                        alert("Error removing tag: " + (data.message || "Unknown error"));
+                    }
+                })
+                .fail(function() { alert("Failed to send remove tag request."); });
+        }
+
+        function escapeHtml(unsafe) {
+            if (typeof unsafe !== 'string') {
+                // console.warn('escapeHtml called with non-string input:', unsafe);
+                return String(unsafe); // Attempt to convert to string
+            }
+            return unsafe
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+    </script>
+}

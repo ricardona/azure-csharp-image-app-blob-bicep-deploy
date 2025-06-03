@@ -1,6 +1,6 @@
 ﻿@using System.IO
 @using System.Linq
-@model IEnumerable<NETPhotoGallery.Models.BlobViewModel>
+@model NETPhotoGallery.Models.GalleryViewModel
 @*
 	//----------------------------------------------------------------------------------
 	// Copyright (c) Microsoft Corporation. All rights reserved.
@@ -36,26 +36,87 @@
 	</div>
 	@* This gets populated from the DisplayFilesToUpload() JS function*@
 	<p id="FilesToUpload"></p>
+	@* Hidden fields for current folder context in upload form *@
+	<input type="hidden" name="currentFolderId" value="@Model.CurrentFolderId" />
+	<input type="hidden" name="currentFolderName" value="@Model.CurrentFolderName" />
+	<input type="text" name="imageTagsString" placeholder="Enter tags, comma-separated" class="form-control mb-2" style="max-width: 400px; margin-top: 10px;" />
 }
 
-@*loops through all files and displays three items:
+@* "Up" Navigation and Current Folder Name Display *@
+@if (!string.IsNullOrEmpty(Model.CurrentFolderId))
+{
+    <div style="margin-bottom: 10px;">
+        <h4>Current Folder: @Model.CurrentFolderName</h4>
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back to Root</a>
+        @* For more specific "Up" navigation to parent:
+           <a asp-action="Index" asp-route-currentFolderId="@Model.ParentFolderId" asp-route-currentFolderName="@Model.ParentFolderName" class="btn btn-outline-secondary btn-sm">Up to Parent</a>
+        *@
+    </div>
+}
+
+@* Create Folder Form *@
+<div style="margin-bottom: 20px;">
+    <h5>Create New Folder</h5>
+    @using (Html.BeginForm("CreateFolder", "Home", FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="parentFolderId" value="@Model.CurrentFolderId" />
+        <input type="hidden" name="parentFolderName" value="@Model.CurrentFolderName" />
+        <div class="form-group">
+            <input type="text" name="folderName" class="form-control" placeholder="Enter folder name" required style="max-width: 300px; display: inline-block; margin-right: 10px;" />
+            <button type="submit" class="btn btn-success">Create Folder</button>
+        </div>
+    }
+</div>
+
+@* Display Folders *@
+@if (Model.Folders != null && Model.Folders.Any())
+{
+    <h5>Folders</h5>
+    <div class="list-group" style="margin-bottom: 20px;">
+        @foreach (var folder in Model.Folders)
+        {
+            <a asp-action="Index" asp-route-currentFolderId="@folder.RowKey" asp-route-currentFolderName="@folder.Name" class="list-group-item list-group-item-action">
+                📁 @folder.Name
+            </a>
+        }
+    </div>
+}
+
+
+@*loops through all files (Images) and displays three items:
 	- The Image (159x159) - [Set in .thumb css class]
 	- A delete icon (30X30) - [Set in .deleteDiv css class] (~/Images/deleteImage.png) that calls deleteImage JS function
 	- A DeleteAll button if there are any items that calls the DeleteAll controller Action*@
-@if (Model != null && Model.Any())
+@if (Model.Images != null && Model.Images.Any())
 {
-	foreach (var item in Model)
+    <h5>Images in @(string.IsNullOrEmpty(Model.CurrentFolderName) ? "Root" : Model.CurrentFolderName)</h5>
+	@foreach (var item in Model.Images)
 	{
-		var imageId = Uri.UnescapeDataString(item.Uri.Segments.Last());
+		@*var imageId = Uri.UnescapeDataString(item.Uri.Segments.Last()); // Using item.ImageId directly now*@
 		<div class="imageBlock">
-			<a href="@item.Uri" target="_blank"><img class="thumb" src="@item.Uri" alt="images" /></a><br />
+			<a asp-action="ImageDetails" asp-route-blobUri="@Uri.EscapeDataString(item.Uri.ToString())"><img class="thumb" src="@item.Uri" alt="images" /></a><br />
 			<div class="imageActions">
-				<button class="btn btn-link like-button" onclick="likeImage('@imageId', this)">
+				<button class="btn btn-link like-button" onclick="likeImage('@item.ImageId', this)">
 					👍 <span class="like-count">@item.Likes</span>
 				</button>
 				<div class="deleteDiv">
-					<img class="deleteIcon" src="~/Images/deleteImage.png" title="Delete Image" onclick="deleteImage('@item.Uri');" />
+					<img class="deleteIcon" src="~/Images/deleteImage.png" title="Delete Image" onclick="deleteImage('@item.Uri.ToString()');" />
 				</div>
+			</div>
+			@* Display Tags and Add/Remove UI *@
+			<div class='imageTags mt-2' id='tags-@item.ImageId'>
+				@foreach (var tag in item.Tags)
+				{
+					<span class='badge bg-secondary me-1 tag-span-@item.ImageId-@tag.RowKey'>
+						@tag.Name
+						<button type='button' class='btn-close btn-sm' aria-label='Remove' onclick='removeTag("@item.ImageId", "@tag.Name", "@tag.RowKey")'></button>
+					</span>
+				}
+			</div>
+			<div class='input-group input-group-sm mt-1'>
+				<input type='text' class='form-control' id='newTag-@item.ImageId' placeholder='Add tag'>
+				<button class='btn btn-outline-primary' type='button' onclick='addTag("@item.ImageId", document.getElementById("newTag-@item.ImageId").value)'>Add</button>
 			</div>
 		</div>
 	}
@@ -95,5 +156,49 @@
                 $(button).find('.like-count').text(data.likes);
             }
         });
+    }
+
+    function addTag(imageId, tagName) {
+        if (!tagName.trim()) { alert('Tag name cannot be empty.'); return; }
+        $.post("/Home/AddTagToImage", { imageId: imageId, tagName: tagName })
+            .done(function(data) {
+                if (data.success && data.tag) {
+                    var tagHtml = "<span class='badge bg-secondary me-1 tag-span-" + imageId + "-" + data.tag.rowKey + "'>" +
+                                  escapeHtml(data.tag.name) +
+                                  " <button type='button' class='btn-close btn-sm' aria-label='Remove' onclick='removeTag(\"" + imageId + "\", \"" + escapeHtml(data.tag.name) + "\", \"" + data.tag.rowKey + "\")'></button>" +
+                                  "</span>";
+                    $('#tags-' + imageId).append(tagHtml);
+                    $('#newTag-' + imageId).val(''); // Clear input
+                } else {
+                    alert("Error adding tag: " + (data.message || "Unknown error"));
+                }
+            })
+            .fail(function() { alert("Error adding tag via AJAX."); });
+    }
+
+    function removeTag(imageId, tagName, tagRowKey) {
+        $.post("/Home/RemoveTagFromImage", { imageId: imageId, tagName: tagName })
+            .done(function(data) {
+                if (data.success) {
+                    $('.tag-span-' + imageId + '-' + tagRowKey).remove();
+                } else {
+                    alert("Error removing tag: " + (data.message || "Unknown error"));
+                }
+            })
+            .fail(function() { alert("Error removing tag via AJAX."); });
+    }
+
+    // Helper to prevent XSS if tag names could contain HTML
+    function escapeHtml(unsafe) {
+        if (typeof unsafe !== 'string') {
+            console.warn("escapeHtml called with non-string value:", unsafe);
+            return ""; // Or handle as appropriate
+        }
+        return unsafe
+             .replace(/&/g, "&amp;")
+             .replace(/</g, "&lt;")
+             .replace(/>/g, "&gt;")
+             .replace(/"/g, "&quot;")
+             .replace(/'/g, "&#039;");
     }
 </script>
